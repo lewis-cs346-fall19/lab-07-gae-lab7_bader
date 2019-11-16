@@ -1,0 +1,20 @@
+<!--This is mainInc.html-->
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8">
+      <title>Increment Page</title>
+   </head>
+   <body>
+       
+       <div>
+           <h2>This is where you can increment a user's count</h2>
+       </div>
+       <div><p>Why hello there {}, how are you today? Your count is {}, isn't that great?</p></div>
+       <div><br><p> You can go <a href="/userForm">to this form</a> to change the user. You can go <a href="/listUsers"> here to see a list of all users</a>or <a href="/">back to main page</a>, which will  redirect you back to this page....hmm.. By the way your cookie is {}</p></div><br><p>Anyway, here is the form to increment count:</p><br>
+        <form method="post" action="/incrementHandler">
+            <div><label for="count">Count to increment (or decrement!) by: </label><input id="count" name="count" type="number" required="true" step="1"></div>
+            <div><input type="submit" id="submit" name="submit" value="Add the specified count to this user!"></div>
+        </form>
+   </body>
+</html>
