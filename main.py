@@ -116,6 +116,11 @@ class UserForm(webapp2.RequestHandler):
                                 </form><div><br><p><a href="/">Back to main page</a> or <a href="/listUsers">see all users here.</a></p></div></body></html>""")
 
 class IncrementHandler(webapp2.RequestHandler):
+
+    # pre: nothing
+    # post: If this is a get method, go to not found becuase this link assumes post
+    def get(self):
+        self.redirect("/.*", True)
     # pre: a user exists with a cookie and that count exists in the form as an integer
     # post: increments its count
     def post(self):
@@ -158,6 +163,11 @@ class Logout(webapp2.RequestHandler):
         self.redirect("/", False)
 
 class ChangeHandler(webapp2.RequestHandler):
+
+    # pre: nothing
+    # post: If this is a get method, go to not found becuase this link assumes post
+    def get(self):
+        self.redirect("/.*", True)
     # pre: a name as a cgi variable
     # post: creates a user, or changes to it if the name already exists, and redirects to main page.
     def post(self):
@@ -192,7 +202,17 @@ class ChangeHandler(webapp2.RequestHandler):
         close(cursor, connection)
         self.redirect("/", False)
 
-app = webapp2.WSGIApplication([ ("/", MainPage), ("/noUser", NoUser), ("/userForm", UserForm), ("/changeHandler",ChangeHandler), ("/incrementHandler", IncrementHandler), ("/listUsers",AllPeople),("/logout",Logout),], debug=True)
+class NotFound(webapp2.RequestHandler):
+    # pre: nothing
+    # post: give a 404 error
+    def get(self):
+        self.error(404)
+        self.response.write("""<!--This is error404.html--><!DOCTYPE html><html lang="en">
+                            <head><meta charset="UTF-8"><title>404 error</title></head><body><div><h2>
+                            Whoopsy daisy, this is a 404 error, that's crasy!</h2></div><div><br><p> You can go
+                             <a href="/">back to main page</a>. Sorry buddy.</p></div></body></html>""")
+
+app = webapp2.WSGIApplication([ ("/", MainPage), ("/noUser", NoUser), ("/userForm", UserForm), ("/changeHandler",ChangeHandler), ("/incrementHandler", IncrementHandler), ("/listUsers",AllPeople),("/logout",Logout),("/.*",NotFound),], debug=True)
 
 def main():
     run_wsgi_app(application)
