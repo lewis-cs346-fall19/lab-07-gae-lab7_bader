@@ -13,9 +13,8 @@ def getCookie(self):
     connection = connectToDatabase()
     cursor = connection.cursor()
     if(cookie is None):
-        newCookie = "%032x" % random.getrandbits(128)
-        self.response.set_cookie("sessionID", newCookie, max_age=20000)
-        cookie = newCookie
+        cookie = "%032x" % random.getrandbits(128)
+        self.response.set_cookie("sessionID", cookie, max_age=20000)
         cursor.execute("INSERT INTO sessions (id) VALUES (%s)", (cookie,))
     else:
         cursor.execute("INSERT IGNORE INTO sessions (id) VALUES (%s)", (cookie,))
@@ -24,7 +23,7 @@ def getCookie(self):
 
 # pre: a cookie and maybe a count
 # post: if cookie exists and nothing important is NULL, then maybe update count, then return name, count, and True.
-        # Otherwise return ("blank", 0, False)
+        # Otherwise return ("", 0, False)
 def getUserFromCookie(self, cookie, count=0):
     connection = connectToDatabase()
     cursor = connection.cursor()
@@ -34,11 +33,11 @@ def getUserFromCookie(self, cookie, count=0):
     if(not session):
         logging.info("The cookie does not exist in the database")
         close(cursor, connection)
-        return ("blank", 0, False)
+        return ("", 0, False)
     if(not session[0][1]):
         logging.info("The cookie exists but points to NULL")
         close(cursor, connection)
-        return ("blank", 0, False)
+        return ("", 0, False)
     userID = session[0][1]
     cursor.execute("SELECT * FROM users WHERE id=%s", (userID,))
     user = cursor.fetchall()
@@ -46,11 +45,11 @@ def getUserFromCookie(self, cookie, count=0):
     if(not user):
         self.response.write("The user does not exist in the database users")
         close(cursor, connection)
-        return ("blank", 0, False)
-    if((not user[0][1])):
+        return ("", 0, False)
+    if((not user[0][1])): # maybe add or user[0][1] is None to make sure count is not NULL
         logging.info("The name or count is null")
         close(cursor, connection)
-        return ("blank", 0, False)
+        return ("", 0, False)
 
     if(count != 0):
         cursor.execute("UPDATE users SET count=count + %s WHERE id=%s", (count,userID))
@@ -103,7 +102,6 @@ class NoUser(webapp2.RequestHandler):
                                 Looks like there is no user in the database</h2></div><div><br><p> You can go
                                 <a href="/userForm">to this form</a> or <a href="/">back to main page</a>, which will logically redirect you back to this page....hmm....tough decisions...<br>You can view all users <a href="/listUsers">here</a><br>By the way your cookie is {}</p></div></body></html>""".format(cookie))
 
-
 class UserForm(webapp2.RequestHandler):
     # pre: nothing
     # post: loads the create user form
@@ -132,7 +130,7 @@ class IncrementHandler(webapp2.RequestHandler):
                                 </p></div></body></html>""")
         cookie = getCookie(self)
         count = str(self.request.get("count"))
-        name, count, NoNullsFoundInTables = getUserFromCookie(self, cookie, count)
+        getUserFromCookie(self, cookie, count)
         self.redirect("/", False)
 
 class AllPeople(webapp2.RequestHandler):
