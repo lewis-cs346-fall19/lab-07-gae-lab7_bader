@@ -6,8 +6,6 @@ import string
 import logging
 database = "gaeTest"
 
-
-# This is a test for
 # pre: nothing
 # post: gets the cookie in the browser. If cookie does not exist, generates a new cookie and adds it to sessions. Then returns cookie
 def getCookie(self):
@@ -24,7 +22,6 @@ def getCookie(self):
     close(cursor, connection)
     return cookie
 
-
 # pre: a cookie and maybe a count
 # post: if cookie exists and nothing important is NULL, then maybe update count, then return name, count, and True.
         # Otherwise return ("blank", 0, False)
@@ -35,11 +32,11 @@ def getUserFromCookie(self, cookie, count=0):
     session = cursor.fetchall()
 
     if(not session):
-        self.response.write("The cookie does not exist in the database")
+        logging.info("The cookie does not exist in the database")
         close(cursor, connection)
         return ("blank", 0, False)
     if(not session[0][1]):
-        self.response.write("The cookie exists but points to NULL")
+        logging.info("The cookie exists but points to NULL")
         close(cursor, connection)
         return ("blank", 0, False)
     userID = session[0][1]
@@ -90,9 +87,9 @@ class MainPage(webapp2.RequestHandler):
                                     <div><p>Why hello there {}, how are you today? Your count is {}, isn't that great?</p></div>
                                     <div><br><p> You can go <a href="/userForm">to this form</a> to change the user. You can go <a href="/listUsers"> here to see a list of all users</a> or <a href="/">back to main page</a>, which will  redirect you back to this page....hmm.. By the way your cookie is {}</p></div><br><p>Anyway, here is the form to increment count:</p><br>
                                     <form method="post" action="/incrementHandler"><div><label for="count">Count to increment (or decrement!) by: </label><input id="count" name="count" type="number" required="true" step="1"></div>
-                                    <div><input type="submit" id="submit" name="submit" value="Add the specified count to this user!"></div>
-                            </form></body></html>""".format(name, count, cookie))
-
+                                    <div><input type="submit" id="submit" name="submit" value="Add the specified count to this user!"></div><div></div>
+                            </form>
+                            <br><br><div><form action="/logout" method="post"><input type="submit" id="logout" name="logout" value="Logout"></form></div></body></html>""".format(name, count, cookie))
         else:
             self.redirect("/noUser", False)
 
@@ -113,13 +110,13 @@ class UserForm(webapp2.RequestHandler):
     def get(self):
         self.response.write("""<!--This is UserForm.html--><!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
                                <title>Form to create a new user or change to another user</title>
-                               </head><body><h1>Form to post Course into SQL Database:</h1><br><br><form method="post" action="/changeHandler">
+                               </head><body><h1>Form to add(or change to) person in SQL Database:</h1><br><br><form method="post" action="/changeHandler">
                                 <div><label for="name">User name: </label><input id="name" name="name" type="text" required="true"></div>
                                 <div><input type="submit" id="submit" name="submit" value="Change to this user, (add if it does not exist)"></div>
                                 </form><div><br><p><a href="/">Back to main page</a> or <a href="/listUsers">see all users here.</a></p></div></body></html>""")
 
 class IncrementHandler(webapp2.RequestHandler):
-    # pre: a user exists with a cookie and that count is an integer
+    # pre: a user exists with a cookie and that count exists in the form as an integer
     # post: increments its count
     def post(self):
         if(not (self.request.get("count")) or (not (isinstance(self.request.get("count"), (int, long))))):
@@ -148,6 +145,18 @@ class AllPeople(webapp2.RequestHandler):
         table += """</table>"""
         self.response.write("""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Printing people</title></head><body>{} <br><br> <a href="/" method="get">Back to main page.</a></body></html>""".format(table))
 
+class Logout(webapp2.RequestHandler):
+    # pre: nothing
+    # post: logs out of session
+    def post(self):
+        cookie = getCookie(self)
+        connection = connectToDatabase()
+        cursor = connection.cursor()
+        cursor.execute("INSERT IGNORE INTO sessions (id) VALUES (%s)", (cookie,))
+        cursor.execute("UPDATE sessions SET user = NULL WHERE id=%s", (cookie,))
+        close(cursor,connection)
+        self.redirect("/", False)
+
 class ChangeHandler(webapp2.RequestHandler):
     # pre: a name as a cgi variable
     # post: creates a user, or changes to it if the name already exists, and redirects to main page.
@@ -165,8 +174,6 @@ class ChangeHandler(webapp2.RequestHandler):
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM users WHERE name=%s", (name,))
         results = cursor.fetchall()
-        cursor.close()
-        cursor = connection.cursor()
         cursor.execute("SELECT * FROM sessions WHERE id=%s", (cookie,))
         session = cursor.fetchall()
 
@@ -182,15 +189,10 @@ class ChangeHandler(webapp2.RequestHandler):
             cursor.execute("INSERT INTO users (name) VALUES (%s)", (name,))
             newID = cursor.lastrowid
             cursor.execute("INSERT INTO sessions (id, user) VALUES (%s,%s)", (cookie, newID))
-
-
-        # cursor.execute("INSERT IGNORE INTO users (name) VALUES (%s)", (name,))
-        # cursor.execute("SELECT * FROM users WHERE name=%s",())
-        # cursor.execute("INSERT IGNORE ")
         close(cursor, connection)
         self.redirect("/", False)
 
-app = webapp2.WSGIApplication([ ("/", MainPage), ("/noUser", NoUser), ("/userForm", UserForm), ("/changeHandler",ChangeHandler), ("/incrementHandler", IncrementHandler), ("/listUsers",AllPeople),], debug=True)
+app = webapp2.WSGIApplication([ ("/", MainPage), ("/noUser", NoUser), ("/userForm", UserForm), ("/changeHandler",ChangeHandler), ("/incrementHandler", IncrementHandler), ("/listUsers",AllPeople),("/logout",Logout),], debug=True)
 
 def main():
     run_wsgi_app(application)
