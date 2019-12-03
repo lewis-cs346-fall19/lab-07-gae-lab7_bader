@@ -100,7 +100,7 @@ class NoUser(webapp2.RequestHandler):
         self.response.write("""<!--This is NoUser.html--><!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
                                 <title>There is no user</title></head><body><div><h2>
                                 Looks like there is no user in the database</h2></div><div><br><p> You can go
-                                <a href="/userForm">to this form</a> or <a href="/">back to main page</a>, which will logically redirect you back to this page....hmm....tough decisions...<br>You can view all users <a href="/listUsers">here</a><br>By the way your cookie is {}</p></div></body></html>""".format(cookie))
+                                <a href="/userForm">to this form</a> or <a href="/">back to main page</a>, which will logically redirect you back to this page....hmm....oh well...<br>You can view all users <a href="/listUsers">here</a><br>By the way your cookie is {}</p></div></body></html>""".format(cookie))
 
 class UserForm(webapp2.RequestHandler):
     # pre: nothing
@@ -116,9 +116,10 @@ class UserForm(webapp2.RequestHandler):
 class IncrementHandler(webapp2.RequestHandler):
 
     # pre: nothing
-    # post: If this is a get method, go to not found becuase this link assumes post
+    # post: If this is a get method, go to not found becuase this url assumes a post method
     def get(self):
         self.redirect("/.*", True)
+
     # pre: a user exists with a cookie and that count exists in the form as an integer
     # post: increments its count
     def post(self):
@@ -146,7 +147,9 @@ class AllPeople(webapp2.RequestHandler):
         for user in users:
             table += """<tr><td>{}</td><td>{}</td><td>{}</td></tr>""".format(user[0], user[1], user[2])
         table += """</table>"""
-        self.response.write("""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Printing people</title></head><body>{} <br><br> <a href="/" method="get">Back to main page.</a></body></html>""".format(table))
+        self.response.write("""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Printing people
+                                </title></head><body>{} <br><br> <a href="/" method="get">Back to main page.</a>
+                                </body></html>""".format(table))
 
 class Logout(webapp2.RequestHandler):
     # pre: nothing
@@ -166,6 +169,7 @@ class ChangeHandler(webapp2.RequestHandler):
     # post: If this is a get method, go to not found becuase this link assumes post
     def get(self):
         self.redirect("/.*", True)
+        
     # pre: a name as a cgi variable
     # post: creates a user, or changes to it if the name already exists, and redirects to main page.
     def post(self):
